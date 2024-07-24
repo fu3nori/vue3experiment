@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Vue3 Form</title>
+    <script src="https://unpkg.com/vue@3.4.33/dist/vue.global.js"></script>
+</head>
+<body>
+<div id="mother">
+    <div style="width: 800px; margin:0 auto;">
+        <h1 style="font-size: 16px;">フォーム</h1>
+        <form @submit.prevent>
+            <p>郵便番号(ハイフン無し)</p>
+            <span><input type="text" v-model="zipcode" name="zip"></span>
+            <button type="button" @click="search">郵便番号検索</button><br>
+            <p>都道府県</p>
+            <span><input type="text" v-model="address1" name="address1"></span><br>
+            <p>市区町村</p>
+            <span><input type="text" v-model="address2" name="address2"></span><br>
+            <p>字</p>
+            <span><input type="text" v-model="address3" name="address3"></span><br>
+            <p>番地・建物名・部屋番号</p>
+            <span><input type="text" v-model="address4" name="address4"></span><br>
+            <p>氏名</p>
+            <span><input type="text" v-model="full_name" name="full_name"></span><br>
+            <p>メールアドレス</p>
+            <span><input type="text" v-model="mail" name="mail"></span><br>
+            <p>メッセージ</p>
+            <div>
+                <textarea v-model="message" name="message" rows="5" cols="33"></textarea>
+            </div>
+            <br>
+            <button type="button" @click="post_data">送信</button><br>
+        </form>
+    </div>
+</div>
+<script>
+    const app = Vue.createApp({
+        data() {
+            return {
+                zipcode: '',
+                address1: '',
+                address2: '',
+                address3: '',
+                address4: '',
+                full_name: '',
+                mail: '',
+                message: ''
+            };
+        },
+        methods: {
+            async search() {
+                try {
+                    const response = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${this.zipcode}`);
+                    const data = await response.json();
+                    if (data.results && data.results.length > 0) {
+                        const address = data.results[0];
+                        this.address1 = address.address1;
+                        this.address2 = address.address2;
+                        this.address3 = address.address3;
+                    } else {
+                        alert('住所が見つかりませんでした。');
+                    }
+                } catch (error) {
+                    alert('エラーが発生しました。');
+                }
+            },
+            async post_data() {
+                // 全てのフィールドが入力されているかチェック
+                if (!this.zipcode || !this.address1 || !this.address2 || !this.address3 ||
+                    !this.address4 || !this.full_name || !this.mail || !this.message) {
+                    alert('全ての項目を入力してください。');
+                    return;
+                }
+
+                // 入力されたデータを収集
+                const formData = new URLSearchParams({
+                    zip: this.zipcode,
+                    address1: this.address1,
+                    address2: this.address2,
+                    address3: this.address3,
+                    address4: this.address4,
+                    full_name: this.full_name,
+                    mail: this.mail,
+                    message: this.message
+                });
+
+                try {
+                    // POSTリクエストを送信
+                    const response = await fetch('data_post.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: formData.toString()
+                    });
+
+                    // レスポンスの確認
+                    if (response.ok) {
+                        alert('データが送信されました。');
+                    } else {
+                        alert('データの送信に失敗しました。');
+                    }
+                } catch (error) {
+                    alert('エラーが発生しました。');
+                }
+            }
+        }
+    });
+
+    app.mount('#mother');
+</script>
+</body>
+</html>
